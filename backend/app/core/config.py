@@ -1,7 +1,8 @@
 from functools import lru_cache
+import json
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,10 +16,20 @@ class Settings(BaseSettings):
     results_dir_name: str = Field(default="results", alias="RESULT_DIR")
     shortforms_dir_name: str = Field(default="shortforms", alias="SHORTFORM_DIR")
     database_file_name: str = Field(default="pushup_ai.sqlite3", alias="DATABASE_FILE")
+    database_url: str = Field(
+        default="postgresql+asyncpg://pushform:pushform_password@db:5432/pushform",
+        validation_alias=AliasChoices("DATABASE_URL", "database_url"),
+    )
+    postgres_db: str = Field(default="pushform", alias="POSTGRES_DB")
+    postgres_user: str = Field(default="pushform", alias="POSTGRES_USER")
+    postgres_password: str = Field(default="pushform_password", alias="POSTGRES_PASSWORD")
     yolo_pose_model: str = Field(default="yolov8n-pose.pt", alias="YOLO_MODEL_PATH")
     yolo_conf: float = Field(default=0.6, alias="YOLO_CONF")
     sample_fps: int = 5
-    cors_origins: list[str] = Field(default_factory=lambda: ["*"], alias="ALLOWED_ORIGINS")
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["*"],
+        validation_alias=AliasChoices("CORS_ORIGINS", "ALLOWED_ORIGINS", "cors_origins"),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -31,6 +42,11 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):
+            stripped = value.strip()
+            if stripped.startswith("["):
+                parsed = json.loads(stripped)
+                if isinstance(parsed, list):
+                    return [str(item).strip() for item in parsed if str(item).strip()]
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 

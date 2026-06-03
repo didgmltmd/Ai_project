@@ -22,5 +22,6 @@ jobs:
             cd backend
             docker compose down
             docker compose up -d --build
+            docker compose exec -T api alembic upgrade head
             docker image prune -f
             docker ps

@@ -2,6 +2,7 @@ from pathlib import Path
 
 from app.core.config import settings
 from app.services.analysis_repository import analysis_repository
+from app.repositories.analysis_repository import persist_completed_analysis
 from app.services.frame_extractor import extract_frames
 from app.services.pose_estimator import DummyPoseEstimator, YoloPoseEstimator
 from app.services.posture_evaluator import evaluate_posture
@@ -10,7 +11,13 @@ from app.services.report_generator import generate_report
 from app.services.shortform_generator import generate_shortform
 
 
-def run_pushup_analysis(analysis_id: str, video_path: Path) -> None:
+def run_pushup_analysis(
+    analysis_id: str,
+    video_path: Path,
+    user_id: int | None = None,
+    caption: str | None = None,
+    publish_to_feed: bool = False,
+) -> None:
     analysis_repository.update(
         analysis_id,
         status="processing",
@@ -98,6 +105,7 @@ def run_pushup_analysis(analysis_id: str, video_path: Path) -> None:
         result["currentFrame"] = total_frames
         result["totalFrames"] = total_frames
         analysis_repository.update(analysis_id, **result)
+        _persist_to_database(result, str(video_path), user_id, caption, publish_to_feed)
     except Exception as exc:
         analysis_repository.update(
             analysis_id,
@@ -113,3 +121,21 @@ def _build_pose_estimator() -> YoloPoseEstimator | DummyPoseEstimator:
     except ImportError:
         return DummyPoseEstimator()
     return YoloPoseEstimator()
+
+
+def _persist_to_database(
+    result: dict,
+    video_path: str,
+    user_id: int | None,
+    caption: str | None,
+    publish_to_feed: bool,
+) -> None:
+    try:
+        import asyncio
+
+        asyncio.run(persist_completed_analysis(result, video_path, user_id, caption, publish_to_feed))
+    except Exception as exc:
+        analysis_repository.update(
+            result["analysisId"],
+            error=f"DB persistence warning: {type(exc).__name__}: {exc}",
+        )

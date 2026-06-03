@@ -1,4 +1,15 @@
 services:
+  db:
+    image: postgres:16
+    container_name: pushform-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pushform}
+      POSTGRES_USER: ${POSTGRES_USER:-pushform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pushform_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
   api:
     build: .
     container_name: pushform-api
@@ -11,4 +22,12 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://pushform:pushform_password@db:5432/pushform}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
+    depends_on:
+      - db
     restart: always
+
+volumes:
+  postgres_data:

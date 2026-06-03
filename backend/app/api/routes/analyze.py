@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile, status
 
 from app.schemas.analysis import AnalyzeStartResponse, AnalysisStatusResponse, ShortformResponse
 from app.services.analysis_pipeline import run_pushup_analysis
@@ -12,6 +12,9 @@ router = APIRouter(prefix="/analyze", tags=["analyze"])
 async def start_pushup_analysis(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    user_id: int | None = Form(default=None, alias="userId"),
+    caption: str | None = Form(default=None),
+    publish_to_feed: bool = Form(default=False, alias="publishToFeed"),
 ) -> AnalyzeStartResponse:
     if not file.filename:
         raise HTTPException(status_code=400, detail="업로드할 파일 이름이 없습니다.")
@@ -22,7 +25,7 @@ async def start_pushup_analysis(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     analysis_repository.create(analysis_id=analysis_id, exercise="pushup", video_path=str(saved_path))
-    background_tasks.add_task(run_pushup_analysis, analysis_id, saved_path)
+    background_tasks.add_task(run_pushup_analysis, analysis_id, saved_path, user_id, caption, publish_to_feed)
     return AnalyzeStartResponse(
         analysisId=analysis_id,
         status="processing",
