@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    container_name: pushform-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./shortforms:/app/shortforms
+    env_file:
+      - path: .env
+        required: false
+    restart: always
