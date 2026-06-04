@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.analyze import router as analyze_router
+from app.api.routes.auth import router as auth_router
 from app.api.routes.feed import router as feed_router
 from app.api.routes.feeds import router as feeds_router
 from app.api.routes.health import router as health_router
@@ -23,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(analyze_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(feed_router, prefix="/api/v1")
 app.include_router(feeds_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")

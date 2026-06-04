@@ -29,6 +29,11 @@ async def update_settings(session: AsyncSession, user_id: int, payload: dict[str
         "commentEnabled": "comment_enabled",
         "messageEnabled": "message_enabled",
         "publicProfile": "public_profile",
+        "autoPlayEnabled": "auto_play_enabled",
+        "mutedByDefault": "muted_by_default",
+        "saveOriginalVideo": "save_original_video",
+        "showAiFeedback": "show_ai_feedback",
+        "postAfterAnalysis": "post_after_analysis",
     }
     for key, attr in fields.items():
         if key in payload and payload[key] is not None:
@@ -45,5 +50,10 @@ def setting_to_dict(setting: UserSetting) -> dict[str, Any]:
         "commentEnabled": setting.comment_enabled,
         "messageEnabled": setting.message_enabled,
         "publicProfile": setting.public_profile,
+        "autoPlayEnabled": setting.auto_play_enabled,
+        "mutedByDefault": setting.muted_by_default,
+        "saveOriginalVideo": setting.save_original_video,
+        "showAiFeedback": setting.show_ai_feedback,
+        "postAfterAnalysis": setting.post_after_analysis,
         "updatedAt": iso(setting.updated_at),
     }

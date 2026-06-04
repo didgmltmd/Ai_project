@@ -9,9 +9,12 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    password_hash: Mapped[str | None] = mapped_column(Text)
     display_name: Mapped[str] = mapped_column(String(100))
     profile_image_url: Mapped[str | None] = mapped_column(Text)
     bio: Mapped[str | None] = mapped_column(Text)
+    workout_intro: Mapped[str | None] = mapped_column(Text)
     follower_count: Mapped[int] = mapped_column(Integer, default=0)
     following_count: Mapped[int] = mapped_column(Integer, default=0)
     post_count: Mapped[int] = mapped_column(Integer, default=0)

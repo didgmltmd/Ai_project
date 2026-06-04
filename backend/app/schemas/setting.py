@@ -6,3 +6,8 @@ class SettingsUpdateRequest(BaseModel):
     commentEnabled: bool | None = None
     messageEnabled: bool | None = None
     publicProfile: bool | None = None
+    autoPlayEnabled: bool | None = None
+    mutedByDefault: bool | None = None
+    saveOriginalVideo: bool | None = None
+    showAiFeedback: bool | None = None
+    postAfterAnalysis: bool | None = None
