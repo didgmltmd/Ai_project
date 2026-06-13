@@ -22,7 +22,7 @@ async def ensure_user(session: AsyncSession, user_id: int | None = None) -> User
         profile_image_url=None,
         bio="푸시업 자세를 기록하고 공유합니다.",
         workout_intro="AI 자세 분석으로 매일 푸시업을 개선하고 있습니다.",
-        is_mock=target_id == DEFAULT_USER_ID,
+        is_mock=False,
     )
     session.add(user)
     await session.flush()

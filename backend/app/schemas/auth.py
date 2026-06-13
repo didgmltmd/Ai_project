@@ -8,6 +8,10 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1)
 
 
+class RefreshTokenRequest(BaseModel):
+    refreshToken: str = Field(min_length=1)
+
+
 class SignUpRequest(BaseModel):
     username: str = Field(min_length=1, max_length=64)
     email: str = Field(min_length=1)
@@ -17,4 +21,6 @@ class SignUpRequest(BaseModel):
 class AuthResponse(BaseModel):
     user: UserResponse
     accessToken: str
-    tokenType: str = "mock"
+    refreshToken: str
+    tokenType: str = "Bearer"
+    expiresIn: int

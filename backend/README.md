@@ -7,6 +7,7 @@ FastAPI backend for Android push-up video upload, YOLO Pose analysis, shortform 
 - `GET /health`
 - `POST /api/v1/auth/signup` body `{ "username": "...", "email": "...", "password": "..." }`
 - `POST /api/v1/auth/login` body `{ "email": "...", "password": "..." }`
+- `POST /api/v1/auth/refresh` body `{ "refreshToken": "..." }`
 - `POST /api/v1/analyze/pushup`: multipart `file` upload. Optional fields: `userId`, `caption`, `publishToFeed`.
 - `GET /api/v1/analyze/{analysisId}`
 - `GET /api/v1/analyze/{analysisId}/shortform`

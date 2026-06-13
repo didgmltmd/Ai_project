@@ -1,12 +1,44 @@
 from typing import Any
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis import Analysis
 from app.models.follow import Follow
 from app.models.user import User
 from app.repositories.helpers import ensure_user, user_to_dict
+
+
+async def search_users(session: AsyncSession, query: str, current_user_id: int | None = None, limit: int = 20) -> list[dict[str, Any]]:
+    current_user = await ensure_user(session, current_user_id)
+    term = query.strip()
+    if not term:
+        return []
+
+    filters = []
+    if term.isdigit():
+        filters.append(User.id == int(term))
+    pattern = f"%{term.lower()}%"
+    filters.extend(
+        [
+            func.lower(User.username).like(pattern),
+            func.lower(User.display_name).like(pattern),
+        ]
+    )
+    stmt = select(User).where(or_(*filters)).order_by(User.username).limit(limit)
+    users = (await session.execute(stmt)).scalars().all()
+
+    results: list[dict[str, Any]] = []
+    for user in users:
+        is_following = (
+            await session.execute(
+                select(func.count())
+                .select_from(Follow)
+                .where(and_(Follow.follower_id == current_user.id, Follow.following_id == user.id))
+            )
+        ).scalar_one() > 0
+        results.append(user_to_dict(user, is_following=is_following))
+    return results
 
 
 async def get_user_profile(session: AsyncSession, user_id: int, current_user_id: int | None = None) -> dict[str, Any] | None:

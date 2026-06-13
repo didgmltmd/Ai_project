@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.schemas.auth import AuthResponse, LoginRequest, SignUpRequest
+from app.schemas.auth import AuthResponse, LoginRequest, RefreshTokenRequest, SignUpRequest
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -21,4 +21,12 @@ async def login(payload: LoginRequest, session: AsyncSession = Depends(get_db)):
     result = await auth_service.login(session, payload.email, payload.password)
     if not result:
         raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
+    return result
+
+
+@router.post("/refresh", response_model=AuthResponse)
+async def refresh(payload: RefreshTokenRequest, session: AsyncSession = Depends(get_db)):
+    result = await auth_service.refresh(session, payload.refreshToken)
+    if not result:
+        raise HTTPException(status_code=401, detail="refresh token이 만료되었거나 올바르지 않습니다.")
     return result

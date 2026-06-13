@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile, status
 
 from app.schemas.analysis import AnalyzeStartResponse, AnalysisStatusResponse, ShortformResponse
-from app.services.analysis_pipeline import run_pushup_analysis
+from app.services.analysis_pipeline import run_pushup_analysis, run_shoulder_press_analysis
 from app.services.analysis_repository import analysis_repository
 from app.services.video_storage import save_upload_file
 
@@ -31,6 +31,32 @@ async def start_pushup_analysis(
         status="processing",
         exercise="pushup",
         message="분석 작업이 시작되었습니다. GET /api/v1/analyze/{analysisId}로 결과를 조회하세요.",
+    )
+
+
+@router.post("/shoulder-press", response_model=AnalyzeStartResponse, status_code=status.HTTP_202_ACCEPTED)
+async def start_shoulder_press_analysis(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    user_id: int | None = Form(default=None, alias="userId"),
+    caption: str | None = Form(default=None),
+    publish_to_feed: bool = Form(default=False, alias="publishToFeed"),
+) -> AnalyzeStartResponse:
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="업로드할 파일 이름이 없습니다.")
+
+    try:
+        analysis_id, saved_path = await save_upload_file(file)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    analysis_repository.create(analysis_id=analysis_id, exercise="shoulder_press", video_path=str(saved_path))
+    background_tasks.add_task(run_shoulder_press_analysis, analysis_id, saved_path, user_id, caption, publish_to_feed)
+    return AnalyzeStartResponse(
+        analysisId=analysis_id,
+        status="processing",
+        exercise="shoulder_press",
+        message="숄더 프레스 분석 작업이 시작되었습니다. GET /api/v1/analyze/{analysisId}로 결과를 조회하세요.",
     )
 
 

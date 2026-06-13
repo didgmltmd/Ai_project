@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Union
 from pydantic import BaseModel, Field
 
 AnalysisStatus = Literal["pending", "processing", "completed", "failed"]
@@ -16,6 +16,13 @@ class Metrics(BaseModel):
     alignmentScore: int = Field(ge=0, le=30)
     consistencyScore: int = Field(ge=0, le=20)
     stabilityScore: int = Field(ge=0, le=15)
+
+
+class ShoulderPressMetrics(BaseModel):
+    symmetryScore: int = Field(ge=0, le=100)
+    overextensionScore: int = Field(ge=0, le=100)
+    alignmentScore: int = Field(ge=0, le=100)
+    consistencyScore: int | None = Field(default=None, ge=0, le=100)
 
 
 class Issue(BaseModel):
@@ -48,7 +55,7 @@ class AnalysisStatusResponse(BaseModel):
     totalFrames: int | None = None
     repCount: int | None = None
     totalScore: int | None = None
-    metrics: Metrics | None = None
+    metrics: Union[Metrics, ShoulderPressMetrics, None] = None
     issues: list[Issue] | None = None
     feedback: Feedback | None = None
     report: Report | None = None

@@ -8,6 +8,11 @@ from app.services import user_service
 router = APIRouter(prefix="/users", tags=["users"])
 
 
+@router.get("/search")
+async def search_users(q: str, currentUserId: int | None = None, session: AsyncSession = Depends(get_db)):
+    return await user_service.search_users(session, q, currentUserId)
+
+
 @router.get("/{user_id}")
 async def get_user(user_id: int, session: AsyncSession = Depends(get_db)):
     user = await user_service.get_user_profile(session, user_id)
