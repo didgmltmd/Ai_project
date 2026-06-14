@@ -20,6 +20,8 @@ async def get_thread(other_user_id: int, userId: int, session: AsyncSession = De
 
 @router.post("", status_code=201)
 async def create_message(payload: MessageCreateRequest, session: AsyncSession = Depends(get_db)):
+    if payload.senderId == payload.receiverId:
+        raise HTTPException(status_code=400, detail="자기 자신에게 메시지를 보낼 수 없습니다.")
     try:
         return await message_service.send_message(session, payload.senderId, payload.receiverId, payload.content)
     except ValueError as exc:
