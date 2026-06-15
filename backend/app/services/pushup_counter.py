@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from app.services.pose_estimator import PoseFrameResult
 from app.utils.geometry import angle_degrees
 
-UP_ANGLE_THRESHOLD = 150
-DOWN_ANGLE_THRESHOLD = 95
-MIN_HOLD_FRAMES = 2
+UP_ANGLE_THRESHOLD = 140
+DOWN_ANGLE_THRESHOLD = 120
+MIN_HOLD_FRAMES = 1
 
 
 @dataclass
