@@ -244,13 +244,73 @@ def _persist_to_database(
     caption: str | None,
     publish_to_feed: bool,
 ) -> None:
+    """별도 이벤트 루프 + 별도 DB 엔진으로 분석 결과를 DB에 저장한다."""
     try:
         import asyncio
+        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+        from app.core.config import settings
+        from app.models.feed import Feed
+        from app.models.analysis import Analysis
+        from app.repositories.helpers import ensure_user
+
+        async def _persist():
+            # 별도 엔진 생성 (메인 루프와 격리)
+            local_engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+            LocalSession = async_sessionmaker(local_engine, expire_on_commit=False)
+            try:
+                async with LocalSession() as session:
+                    from sqlalchemy import select
+                    user = await ensure_user(session, user_id)
+                    analysis_id = result["analysisId"]
+                    existing = (await session.execute(select(Analysis).where(Analysis.analysis_id == analysis_id))).scalar_one_or_none()
+                    if existing:
+                        return
+
+                    metrics = result.get("metrics") or {}
+                    feedback_data = result.get("feedback") or {}
+                    feed = None
+                    if publish_to_feed:
+                        feed = Feed(
+                            author_id=user.id,
+                            video_url=result.get("shortformUrl") or video_path,
+                            shortform_url=result.get("shortformUrl"),
+                            exercise_type=result.get("exercise") or "pushup",
+                            rep_count=result.get("repCount") or 0,
+                            score=result.get("totalScore") or 0,
+                            summary_feedback=feedback_data.get("summary"),
+                            caption=caption or "AI 자세 분석 결과",
+                            hashtags=["#푸시업", "#AI자세분석", "#운동기록"],
+                            is_mine=True,
+                        )
+                        session.add(feed)
+                        await session.flush()
+                        user.post_count += 1
+
+                    analysis = Analysis(
+                        analysis_id=analysis_id,
+                        user_id=user.id,
+                        feed_id=feed.id if feed else None,
+                        exercise=result.get("exercise") or "pushup",
+                        rep_count=result.get("repCount") or 0,
+                        total_score=result.get("totalScore") or 0,
+                        depth_score=metrics.get("depthScore") or 0,
+                        alignment_score=metrics.get("alignmentScore") or 0,
+                        consistency_score=metrics.get("consistencyScore") or 0,
+                        stability_score=metrics.get("stabilityScore") or 0,
+                        issues=result.get("issues") or [],
+                        feedback=feedback_data,
+                        original_video_url=video_path,
+                        shortform_url=result.get("shortformUrl"),
+                    )
+                    session.add(analysis)
+                    await session.commit()
+            finally:
+                await local_engine.dispose()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            loop.run_until_complete(persist_completed_analysis(result, video_path, user_id, caption, publish_to_feed))
+            loop.run_until_complete(_persist())
         finally:
             loop.close()
     except Exception as exc:
