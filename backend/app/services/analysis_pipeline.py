@@ -247,18 +247,12 @@ def _persist_to_database(
     try:
         import asyncio
 
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            # 이미 이벤트 루프가 돌고 있으면 새 루프에서 실행
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                pool.submit(asyncio.run, persist_completed_analysis(result, video_path, user_id, caption, publish_to_feed)).result()
-        else:
-            asyncio.run(persist_completed_analysis(result, video_path, user_id, caption, publish_to_feed))
+            loop.run_until_complete(persist_completed_analysis(result, video_path, user_id, caption, publish_to_feed))
+        finally:
+            loop.close()
     except Exception as exc:
         analysis_repository.update(
             result["analysisId"],
